@@ -1,3 +1,5 @@
+![Esri UC Banner](https://github.com/EsriPS/stunning-webapps-2020/blob/master/uc-banner.png)
+
 # Building Stunning Web Apps
 
 This readme will serve as a quick reference page for the 2020 Esri UC Postconference Seminar: **Building Stunning Web Apps**
