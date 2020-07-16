@@ -63,6 +63,13 @@ const suggest = async ({ vm, value }) => {
 };
 
 const search = async ({ vm, value }) => {
+  // Make sure the Trail Search
+  // returns all fields for custom popup
+  vm.allSources.forEach((source, i) => {
+    if (source.layer && source.layer.title === 'Trails') {
+      source.outFields = ['*'];
+    }
+  });
   const searchResponse = await vm.search(value);
   return searchResponse;
 };

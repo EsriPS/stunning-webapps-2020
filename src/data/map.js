@@ -134,7 +134,7 @@ export async function initWebMap(webmap) {
 
   // hiking trails
   // const hikingLayer = app.webmap.layers.getItemAt(2); // could be better
-  const hikingLayer = app.webmap.findLayerById(TRAIL_ID);
+  const hikingLayer = webmap.findLayerById(TRAIL_ID);
   hikingLayer.outFields = ['*'];
   // hikingLayer.visible = false;
   hikingLayer.load();
@@ -142,9 +142,10 @@ export async function initWebMap(webmap) {
 
   hikingLayer.popupTemplate.content = async ({ graphic }) => {
     const trailId = graphic.attributes.FID;
-    const query = hikingLayer.createQuery();
-    query.where = `FID = ${trailId}`;
-    const { features } = await hikingLayer
+    const query = app.notesLayer.createQuery();
+    query.outFields = ['*'];
+    query.where = `TrailId = ${trailId}`;
+    const { features } = await app.notesLayer
       .queryFeatures(query)
       .catch((err) => console.warn(err.message));
     let notes = `<p>No notes available</p>`;
@@ -169,13 +170,6 @@ export async function initWebMap(webmap) {
   // TrailHeads layer
   const layer = webmap.findLayerById(TRAILHEAD_ID);
   await layer.load();
-
-  layer.popupTemplate.actions = layer.popupTemplate.actions || [];
-  layer.popupTemplate.actions.push({
-    id: 'fetch-directions',
-    title: 'Directions',
-    className: 'esri-icon-directions',
-  });
   layer.visible = true;
 
   return webmap;
@@ -187,8 +181,8 @@ export async function initWebMap(webmap) {
  * Takes an object with filters to apply to layer
  * @param {*} filter
  */
-export function applyFilter(filter) {
-  /**
+export function applyFilter(filter = {}) {
+  /**ß
    * {
    *   type: String,
    *   surface: String,
@@ -256,6 +250,7 @@ export async function initView(view) {
   app.view.popup.actions.add({
     id: 'query-elevation',
     title: 'Elevation',
+    className: 'esri-icon-polyline'
   });
 
   app.view.when(() => {
@@ -287,8 +282,6 @@ export async function initView(view) {
     view.ui.add(directionsExpand, 'top-right');
 
     app.directions = directions;
-
-    directions.viewModel.stops.on('change', (changes) => console.log(changes));
   });
 
   app.view.popup.on('trigger-action', ({ action }) => {
@@ -300,25 +293,6 @@ export async function initView(view) {
           console.log('elevation result', result);
           console.log(calculateAltitudeGainLoss(result.geometry.paths));
         });
-    }
-    if (action.id === 'fetch-directions') {
-      app.directions.viewModel.stops.addMany([
-        new Graphic({
-          attributes: {},
-          geometry: {
-            type: 'point',
-            longitude: -104.9903,
-            latitude: 39.7392,
-          },
-        }),
-        new Graphic({
-          attributes: {},
-          geometry: app.view.popup.selectedFeature.geometry.clone(),
-        }),
-      ]);
-      app.directions.viewModel.load().then(() => {
-        app.directions.getDirections();
-      });
     }
   });
 
@@ -373,7 +347,7 @@ export async function fetchMaxElevation() {
 /**
  *
  * @param {{ min: Number, max: Number }}} elevation
- * @param {{ dog: String, bike: String, hore: String }} attributes
+ * @param {{ dog: String, bike: String, horse: String }} attributes
  * @returns Promise<{ features: `esri/Graphic` }>
  */
 export async function fetchTrails(elevation, { dogs, bike, horse }) {
@@ -382,7 +356,7 @@ export async function fetchTrails(elevation, { dogs, bike, horse }) {
   await app.webmap.load();
   // const layer = app.webmap.layers.getItemAt(1); // could be better
   const layer = app.webmap.findLayerById(TRAIL_ID);
-  layer.outFields = ['name', 'name_1'];
+  layer.outFields = ['*'];
   await layer.load();
   const query = layer.createQuery();
   query.returnDistinct = true;
@@ -470,6 +444,7 @@ export async function filterMapData(fids) {
 
   await whenFalseOnce(layerView, 'updating');
   const query = layer.createQuery();
+  query.outFields = ['*'];
   query.where = where;
   const { features } = await layer.queryFeatures(query);
 
